@@ -80,7 +80,7 @@ Integrates exosomal and free miRNA DE results to identify miRNA–mRNA regulator
 - Finds DE miRNAs common across comparisons (ATTRv vs CC and ATTRv vs HC)
 - Converts precursor miRNA IDs to mature forms via `miRBaseConverter`
 - Retrieves validated miRNA–mRNA targets with `multiMiR`
-- Computes Spearman correlations between miRNA and mRNA expression --> significant negative correlations indicate genes affected in
+- Computes Spearman correlations between miRNA and mRNA expression  →  significant negative correlations indicate genes affected in
   amyloidosis validated through miRNA and mRNA expressions combined
 - Performs functional enrichment: GO (BP, MF, CC) and KEGG via `clusterProfiler`
 - Exports results and plots to `.xlsx` and `.pdf`
