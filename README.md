@@ -10,7 +10,7 @@ Differential expression analysis of **exosomal and circulating free miRNAs** in 
 miRNA-mRNA-DE-analysis/
 │
 ├── 01_exosomal_miRNA_DE/
-│   └── DE_analysis_ashr.R
+│   └── exo_DE_analysis_ashr.R
 │
 ├── 02_free_miRNA_DE/
 │   └── free_miRNAs_DE_analysis_ashr.R
@@ -35,18 +35,30 @@ Steps 01 and 02 are **independent and can be run in parallel**. Step 03 depends 
 
 ## Script descriptions
 
-### `01_exosomal_miRNA_DE/DE_analysis_ashr.R`
-Differential expression analysis of **exosomal miRNAs**.
+### `01_exosomal_miRNA_DE/exo_DE_analysis_ashr.R`
+Differential expression analysis of **exosomal miRNAs**, with functional enrichment. Run via command-line arguments:
+
+```bash
+Rscript exo_DE_analysis_ashr.R <cond_ref> <cond_test> <LFC>
+# e.g.:
+Rscript exo_DE_analysis_ashr.R g2 g4 1
+```
 
 - Loads raw counts and sample metadata
 - Filters low-count genes
 - Runs DESeq2 with `~status` design
 - Applies `ashr` log2 fold-change shrinkage
-- Annotates results with Ensembl gene symbols via `biomaRt`
-- Exports significant DE miRNAs to `.xlsx` (full, LFC-filtered, and top 50)
+- Annotates results with Ensembl gene symbols and miRBase IDs via `biomaRt`
+- Exports significant DE miRNAs to `.xlsx` (full, LFC-filtered, top 50, and shared with no-shrinkage results)
+- Converts precursor to mature miRNA IDs via `miRBaseConverter`
+- Retrieves validated miRNA–mRNA targets with `multiMiR`
+- GO enrichment (BP, MF, CC) and KEGG via `clusterProfiler`, separately for up- and down-regulated miRNAs
+- Identifies hub genes (targets regulated by multiple miRNAs and implicated in multiple pathways)
+- Integrates target expression with mRNA log2FC to assess directionality
+- Visualisations: MA plots, volcano plot, sample distance/correlation heatmaps, dotplots, barplots, cnetplot, emapplot
 
 **Input:** `counts.txt`, `samples.txt`  
-**Output:** `results/LFC{n}/{cond_test}{cond_ref}/` → several `.xlsx` files
+**Output:** `exosomes/results/LFC{n}/{cond_test}{cond_ref}/` → `.xlsx` and `.pdf` files
 
 ---
 
