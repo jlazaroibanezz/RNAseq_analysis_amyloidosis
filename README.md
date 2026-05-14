@@ -53,9 +53,7 @@ Rscript exo_DE_analysis_ashr.R g2 g4 1
 - Converts precursor to mature miRNA IDs via `miRBaseConverter`
 - Retrieves validated miRNA–mRNA targets with `multiMiR`
 - GO enrichment (BP, MF, CC) and KEGG via `clusterProfiler`, separately for up- and down-regulated miRNAs
-- Identifies hub genes (targets regulated by multiple miRNAs and implicated in multiple pathways)
-- Integrates target expression with mRNA log2FC to assess directionality
-- Visualisations: MA plots, volcano plot, sample distance/correlation heatmaps, dotplots, barplots, cnetplot, emapplot
+- Visualisations: MA plots, volcano plot, sample distance/correlation heatmaps, dotplots, barplots
 
 **Input:** `counts.txt`, `samples.txt`  
 **Output:** `exosomes/results/LFC{n}/{cond_test}{cond_ref}/` → `.xlsx` and `.pdf` files
