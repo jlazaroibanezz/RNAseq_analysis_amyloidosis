@@ -1,6 +1,6 @@
 # miRNA Differential Expression & miRNA–mRNA Correlation Analysis
 
-Differential expression analysis of **exosomal and circulating free miRNAs** in ATTRv patients versus healthy controls (HC) and clinical controls (CC), followed by target identification and miRNA–mRNA correlation and functional enrichment analysis.
+Differential expression analysis of **exosomal and circulating free miRNAs** in ATTRv patients versus healthy controls (HC) and cardiac controls, or patients with other cardiac affections (CC), followed by target identification and miRNA–mRNA correlation and functional enrichment analysis.
 
 ---
 
