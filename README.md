@@ -87,6 +87,10 @@ Integrates exosomal and free miRNA DE results to identify miRNA–mRNA regulator
 **Input:** `.xlsx` files from steps 01 and 02  
 **Output:** `protein_coding_new_analysis/{free,exosomes}/` → `.xlsx` and `.pdf` files
 
+## Pipeline overview
+```bash
+![Correlation analysis](03_correlation_analysis/new_analysis_scheme.png)
+```
 ---
 
 ## Dependencies
