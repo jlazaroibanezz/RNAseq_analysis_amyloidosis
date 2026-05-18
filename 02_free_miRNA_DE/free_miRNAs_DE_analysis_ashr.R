@@ -7,12 +7,12 @@ args <- commandArgs(trailingOnly = TRUE)
 
 cond_ref <- args[1] # "g1"
 cond_test <- args[2] # "g2"
-# cond_ref <- "g1"
+# cond_ref <- "g4"
 # cond_test <- "g2"
 LFC <- as.numeric(args[3]) # 1
 # LFC <- 1
 
-wd <- paste0('/media/jorge/ATTR_1_mac/BIOGUNE_miRNA_FIISA-01+02_smallRNA/DATA ANALYSIS 07122022/Analysis/', cond_ref, '_Vs_', cond_test)
+wd <- paste0('/media/jorge/ATTR_1_mac/BIOGUNE_miRNA_FIISA-01+02_smallRNA/DATA ANALYSIS 07122022/Analysis/', cond_test, '_Vs_', cond_ref)
 setwd(wd)
 # setwd('/media/jorge/ATTR_1_mac/BIOGUNE_miRNA_FIISA-01+02_smallRNA/DATA ANALYSIS 07122022/Analysis/g4_Vs_g2')
 # setwd('/media/jorge/ATTR_1_mac/BIOGUNE_miRNA_FIISA-01+02_smallRNA/DATA ANALYSIS 07122022/Analysis/g1_Vs_g2')
@@ -225,8 +225,8 @@ summary_bins
 library(org.Hs.eg.db)
 library(biomaRt)
 
-# mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-mart <- useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl", mirror='useast')
+mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+# mart <- useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl", mirror='www')
 
 genes <- rownames(deGeneResult)   # O la lista de genes que quieras anotar
 
@@ -503,7 +503,10 @@ pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", 
 pdf(pdf_file, width = 7, height = 5)
 ggplot(data = volcano_df[volcano_df$diffexpressed != "No",], aes(x = log2FoldChange, y = -log10(padj), label = mir_canonical, color = diffexpressed)) +
   xlab("log2Foldchange") +
-  scale_color_manual(name = "Differentially expressed", values=c("red", "blue")) +
+  scale_color_manual(name = "Differentially expressed", values = setNames(
+    c("red", "blue"),
+    c(over_exp, under_exp)
+  )) +
   geom_point() +
   theme_minimal() +
   geom_text_repel(force = 12, max.overlaps = 10) +
@@ -575,13 +578,13 @@ targets <- get_multimir(
   table = "validated"   #option: all --> validated + predicted
 )
 
-### check the miRNAs that do not have validated targets
-
-# no_targets <- get_multimir(
-#   mirna = "hsa-miR-3135a",
-#   summary = TRUE,
-#   table = "validated"   # validated + predicted
-# )
+# ### check the miRNAs that do not have validated targets
+# 
+# # no_targets <- get_multimir(
+# #   mirna = "hsa-miR-3135a",
+# #   summary = TRUE,
+# #   table = "validated"   # validated + predicted
+# # )
 
 ### check the miRNAs that do not have validated targets
 
@@ -715,6 +718,7 @@ miRNA_up <- mir_map %>%
 # length(mir_multimir_up)
 
 miRNANames_up <- c(miRNA_up$mirbase_id)
+if (length(miRNANames_up) > 0) {
 mature_up <- miRNA_PrecursorToMature(miRNANames_up)
 mature_mirnas_up <- unique(
   na.omit(
@@ -724,6 +728,7 @@ mature_mirnas_up <- unique(
 mature_mirnas_up
 length(mature_mirnas_up)
 
+if (length(mature_mirnas_up) > 0) {
 targets_up <- get_multimir(
   mirna = mature_mirnas_up,
   summary = TRUE,
@@ -740,10 +745,12 @@ unique(targets_df_up$mature_mirna_id)
 
 ### Define background genes
 
+if (nrow(targets_df_up) > 0) {
 gene_entrez_up <- unique(targets_df_up$target_entrez)
 gene_entrez_up <- gene_entrez_up[!is.na(gene_entrez_up)]
 gene_entrez_up
 
+if (length(gene_entrez_up) > 0) {
 ego_bp_up <- enrichGO(
   gene          = gene_entrez_up,
   universe      = bg_entrez,
@@ -780,49 +787,75 @@ ego_cc_up <- enrichGO(
   readable = TRUE
 )
 
-head(ego_bp@result)
-
 ego_bp_up_simplified <- clusterProfiler::simplify(ego_bp_up) # Filter redundant GO terms
 ego_mf_up_simplified <- clusterProfiler::simplify(ego_mf_up) # Filter redundant GO terms
 ego_cc_up_simplified <- clusterProfiler::simplify(ego_cc_up) # Filter redundant GO terms
 
-bp_all <- ego_bp_up@result$Description
-bp_simpl <- ego_bp_up_simplified@result$Description
-length(bp_all)
-length(bp_simpl)
-
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "BP_miRNA_targets_up")
 pdf(pdf_file, width = 7, height = 9)
-dotplot(ego_bp_up_simplified, showCategory = 15) +
-  ggtitle("GO Biological Process – miRNA targets")
+print(dotplot(ego_bp_up_simplified, showCategory = 15) +
+  ggtitle("GO Biological Process – miRNA targets"))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "MF_miRNA_targets_up")
 pdf(pdf_file, width = 7, height = 9)
-dotplot(ego_mf_up_simplified, showCategory = 15) +
-  ggtitle("GO Molecular Function – miRNA targets")
+print(dotplot(ego_mf_up_simplified, showCategory = 15) +
+  ggtitle("GO Molecular Function – miRNA targets"))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "CC_miRNA_targets_up")
 pdf(pdf_file, width = 7, height = 9)
-dotplot(ego_cc_up_simplified, showCategory = 15) +
-  ggtitle("GO Cellular Component – miRNA targets")
+print(dotplot(ego_cc_up_simplified, showCategory = 15) +
+  ggtitle("GO Cellular Component – miRNA targets"))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "BP_miRNA_targets_barplot_up")
 pdf(pdf_file, width = 7, height = 9)
-barplot(ego_bp_up_simplified, showCategory = 15)
+print(barplot(ego_bp_up_simplified, showCategory = 15))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "MF_miRNA_targets_barplot_up")
 pdf(pdf_file, width = 7, height = 9)
-barplot(ego_mf_up_simplified, showCategory = 15)
+print(barplot(ego_mf_up_simplified, showCategory = 15))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "CC_miRNA_targets_barplot_up")
 pdf(pdf_file, width = 7, height = 9)
-barplot(ego_cc_up_simplified, showCategory = 15)
+print(barplot(ego_cc_up_simplified, showCategory = 15))
 dev.off()
+
+ekegg_up <- enrichKEGG(
+  gene = gene_entrez_up,
+  universe = bg_entrez,
+  organism = "hsa",
+  pvalueCutoff = 0.05
+)
+
+pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_up")
+pdf(pdf_file, width = 7, height = 5)
+print(dotplot(ekegg_up))
+dev.off()
+
+pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_up_barplot")
+pdf(pdf_file, width = 7, height = 5)
+print(barplot(ekegg_up))
+dev.off()
+
+genes_kegg_up <- strsplit(ekegg_up@result$geneID, "/")  # Counts the number of enriched pathways that contain that gene (e.g., 10000 --> 102, gene 10000 appears in 102 enriched pathways by DE miRNAs)
+hub_kegg_genes_up <- table(unlist(genes_kegg_up)) %>%
+  sort(decreasing = TRUE)
+} else {
+  message("No Entrez IDs for UP miRNA targets")
+}
+} else {
+  message("No validated targets found for UP miRNAs")
+}
+} else {
+  message("No mature miRNAs generated from UP precursors")
+}
+} else {
+  message("No upregulated miRNAs found – skipping UP analysis")
+}
 
 # Downregulated  --> in g1 vs g2 there is no significant GO terms because padjust > 0.05 for the only miRNA DE
 
@@ -835,6 +868,7 @@ miRNA_down <- mir_map %>%
 # length(mir_multimir_down)
 
 miRNANames_down <- c(miRNA_down$mirbase_id)
+if (length(miRNANames_down) > 0) {
 mature_down <- miRNA_PrecursorToMature(miRNANames_down)
 mature_mirnas_down <- unique(
   na.omit(
@@ -844,8 +878,9 @@ mature_mirnas_down <- unique(
 mature_mirnas_down
 length(mature_mirnas_down)
 
+if (length(mature_mirnas_down) > 0) {
 targets_down <- get_multimir(
-  mirna = mature_mirnas_down,
+  mirna = mature_mirnas_down,   ##### change here
   summary = TRUE,
   table = "validated"   # validated + predicted
 )
@@ -858,10 +893,12 @@ length(genes_target_down)
 genes_target_down[1:10]
 unique(targets_df_down$mature_mirna_id)
 
+if (nrow(targets_df_down) > 0) {
 gene_entrez_down <- unique(targets_df_down$target_entrez)
 gene_entrez_down <- gene_entrez_down[!is.na(gene_entrez_down)]
 gene_entrez_down
 
+if (length(gene_entrez_down) > 0) {
 ego_bp_down <- enrichGO(
   gene          = gene_entrez_down,
   universe      = bg_entrez,
@@ -898,189 +935,128 @@ ego_cc_down <- enrichGO(
   readable = TRUE
 )
 
-head(ego_bp@result)
-
 ego_bp_down_simplified <- clusterProfiler::simplify(ego_bp_down) # Filter redundant GO terms
 ego_mf_down_simplified <- clusterProfiler::simplify(ego_mf_down) # Filter redundant GO terms
 ego_cc_down_simplified <- clusterProfiler::simplify(ego_cc_down) # Filter redundant GO terms
 
-bp_all <- ego_bp@result$Description
-bp_simpl <- ego_bp_simplified@result$Description
-length(bp_all)
-length(bp_simpl)
-
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "BP_miRNA_targets_down")
 pdf(pdf_file, width = 7, height = 9)
-dotplot(ego_bp_down, showCategory = 15) +
-  ggtitle("GO Biological Process – miRNA targets")
+print(dotplot(ego_bp_down, showCategory = 15) +
+  ggtitle("GO Biological Process – miRNA targets"))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "MF_miRNA_targets_down")
 pdf(pdf_file, width = 7, height = 9)
-dotplot(ego_mf_down, showCategory = 15) +
-  ggtitle("GO Molecular Function – miRNA targets")
+print(dotplot(ego_mf_down, showCategory = 15) +
+  ggtitle("GO Molecular Function – miRNA targets"))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "CC_miRNA_targets_down")
 pdf(pdf_file, width = 7, height = 9)
-dotplot(ego_cc_down, showCategory = 15) +
-  ggtitle("GO Cellular Component – miRNA targets")
+print(dotplot(ego_cc_down, showCategory = 15) +
+  ggtitle("GO Cellular Component – miRNA targets"))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "BP_miRNA_targets_barplot_down")
 pdf(pdf_file, width = 7, height = 9)
-barplot(ego_bp_down, showCategory = 15)
+print(barplot(ego_bp_down, showCategory = 15))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "MF_miRNA_targets_barplot_down")
 pdf(pdf_file, width = 7, height = 9)
-barplot(ego_mf_down, showCategory = 15)
+print(barplot(ego_mf_down, showCategory = 15))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "CC_miRNA_targets_barplot_down")
 pdf(pdf_file, width = 7, height = 9)
-barplot(ego_cc_down, showCategory = 15)
+print(barplot(ego_cc_down, showCategory = 15))
 dev.off()
-
-### KEGG 
-
-# Upregulated
-
-ekegg_up <- enrichKEGG(
-  gene = gene_entrez_up,
-  organism = "hsa",
-  pvalueCutoff = 0.05
-)
-
-pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_up")
-pdf(pdf_file, width = 7, height = 5)
-dotplot(ekegg_up)
-dev.off()
-
-pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_up_barplot")
-pdf(pdf_file, width = 7, height = 5)
-barplot(ekegg_up)
-dev.off()
-
-genes_kegg_up <- strsplit(ekegg_up@result$geneID, "/")  # Counts the number of enriched pathways that contain that gene (e.g., 10000 --> 102, gene 10000 appears in 102 enriched pathways by DE miRNAs)
-hub_kegg_genes_up <- table(unlist(genes_kegg_up)) %>%
-  sort(decreasing = TRUE)
-
-# Downregulated
 
 ekegg_down <- enrichKEGG(
   gene = gene_entrez_down,
+  universe = bg_entrez,
   organism = "hsa",
   pvalueCutoff = 0.05
 )
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_down")
 pdf(pdf_file, width = 7, height = 5)
-dotplot(ekegg_down)
+print(dotplot(ekegg_down))
 dev.off()
 
 pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_down_barplot")
 pdf(pdf_file, width = 7, height = 5)
-barplot(ekegg_down)
+print(barplot(ekegg_down))
 dev.off()
 
 genes_kegg_down <- strsplit(ekegg_down@result$geneID, "/")  # Counts the number of enriched pathways that contain that gene (e.g., 10000 --> 102, gene 10000 appears in 102 enriched pathways by DE miRNAs)
 hub_kegg_genes_down <- table(unlist(genes_kegg_down)) %>%
   sort(decreasing = TRUE)
+} else {
+  message("No Entrez IDs for DOWN miRNA targets")
+}
+} else {
+  message("No validated targets found for DOWN miRNAs")
+}
+} else {
+  message("No mature miRNAs generated from DOWN precursors")
+}
+} else {
+  message("No downregulated miRNAs found – skipping DOWN analysis")
+}
 
-# More plots 
-
-### Upregulated
-
-cnetplot(
-  ego_bp_up,
-  showCategory = 5
-)
-
-ego_bp_up_top <- ego_bp_up_simplified
-ego_bp_up_top@result <- ego_bp_up_top@result[
-  order(ego_bp_up_top@result$p.adjust),
-][1:20, ]
-
-ego_bp_up_top <- enrichplot::pairwise_termsim(ego_bp_up_top)
-emapplot(
-  ego_bp_up_top,
-  showCategory = 20,
-  layout = "kk",
-  cluster.params = list(label_format = 0))
-
-### Downregulated  --> In this case the number of genes is very low, that's why some plots do not work.
-
-cnetplot(
-  ego_bp_down,
-  showCategory = 5
-)
-
-ego_bp_down_top <- ego_bp_down_simplified
-ego_bp_down_top@result <- ego_bp_down_top@result[
-  order(ego_bp_down_top@result$p.adjust),
-][1:20, ]
-
-ego_bp_down_top <- enrichplot::pairwise_termsim(ego_bp_down_top)
-emapplot(
-  ego_bp_down_top,
-  showCategory = 20,
-  layout = "kk",
-  cluster.params = list(label_format = 0))
-
-# Identify HUB genes
+### KEGG 
 
 # Upregulated
 
-hub_genes_up <- targets_df_up %>% 
-  count(target_entrez)%>%
-  arrange(desc(n))%>%    # n gives the number of evidences of a gene being regulated by an miRNA
-  filter(n >= 3)
-hub_genes_up
-
-biologically_relevant_genes_up <- intersect(hub_genes_up$target_entrez, names(hub_kegg_genes_up)) # Genes that are regulated by several miRNAs and also implied in many pathways
-length(biologically_relevant_genes_up)
-biologically_relevant_genes_up_name <- targets_df_up[targets_df_up$target_entrez %in% biologically_relevant_genes_up, "target_symbol"]
-length(biologically_relevant_genes_up_name)
-biologically_relevant_genes_up_name <- unique(biologically_relevant_genes_up_name)
-# biologically_relevant_genes_up_name
-length(biologically_relevant_genes_up_name)
+# if (length(gene_entrez_up) > 0) {
+# ekegg_up <- enrichKEGG(
+#   gene = gene_entrez_up,
+#   organism = "hsa",
+#   pvalueCutoff = 0.05
+# )
+# 
+# pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_up")
+# pdf(pdf_file, width = 7, height = 5)
+# dotplot(ekegg_up)
+# dev.off()
+# 
+# pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_up_barplot")
+# pdf(pdf_file, width = 7, height = 5)
+# barplot(ekegg_up)
+# dev.off()
+# 
+# genes_kegg_up <- strsplit(ekegg_up@result$geneID, "/")  # Counts the number of enriched pathways that contain that gene (e.g., 10000 --> 102, gene 10000 appears in 102 enriched pathways by DE miRNAs)
+# hub_kegg_genes_up <- table(unlist(genes_kegg_up)) %>%
+#   sort(decreasing = TRUE)
+# } else {
+#   message("No Entrez IDs for DOWN miRNA targets")
+# }
 
 # Downregulated
 
-hub_genes_down <- targets_df_down %>%
-  count(target_entrez)%>%
-  arrange(desc(n))%>%
-  filter(n >= 3)
-hub_genes_down
-
-biologically_relevant_genes_down <- intersect(hub_genes_down$target_entrez, names(hub_kegg_genes_down)) # Genes that are regulated by several miRNAs and also implied in many pathways
-length(biologically_relevant_genes_down)
-biologically_relevant_genes_down_name <- targets_df_down[targets_df_down$target_entrez %in% biologically_relevant_genes_down, "target_symbol"]
-length(biologically_relevant_genes_down_name)
-biologically_relevant_genes_down_name <- unique(biologically_relevant_genes_down_name)
-# biologically_relevant_genes_up_name
-length(biologically_relevant_genes_down_name)
-
-### Integration with gene expression
-# Upregulated
-
-targets_df_up_DE <- targets_df_up %>%
-  left_join(deGeneResult[, c("ensembl_gene_id", "log2FoldChange")], 
-            by = c("target_ensembl" = "ensembl_gene_id"))
-head(targets_df_up_DE)
-
-targets_df_up_DE <-unique(targets_df_up_DE[, c("target_entrez","target_symbol","log2FoldChange")])
-
-targets_df_up_DE <- targets_df_up_DE %>%
-  mutate(direction = ifelse(log2FoldChange < 0, "expected", "unexpected"))
-
-table(targets_df_up_DE$direction)
-wilcox.test(targets_df_up_DE$log2FoldChange, mu = 0)
-
-wilcox.test(
-  targets_df_up_DE$log2FoldChange,
-  deGeneResult$log2FoldChange
-)
+# if (length(gene_entrez_down) > 0) {
+# ekegg_down <- enrichKEGG(
+#   gene = gene_entrez_down,
+#   organism = "hsa",
+#   pvalueCutoff = 0.05
+# )
+# 
+# pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_down")
+# pdf(pdf_file, width = 7, height = 5)
+# dotplot(ekegg_down)
+# dev.off()
+# 
+# pdf_file <- paste0("/home/jorge/Escritorio/RNA_seq_luca/results/LFC", LFC, "/", cond_test, cond_ref, "/", "kegg_down_barplot")
+# pdf(pdf_file, width = 7, height = 5)
+# barplot(ekegg_down)
+# dev.off()
+# 
+# genes_kegg_down <- strsplit(ekegg_down@result$geneID, "/")  # Counts the number of enriched pathways that contain that gene (e.g., 10000 --> 102, gene 10000 appears in 102 enriched pathways by DE miRNAs)
+# hub_kegg_genes_down <- table(unlist(genes_kegg_down)) %>%
+#   sort(decreasing = TRUE)
+# } else {
+#   message("No Entrez IDs for DOWN miRNA targets")
+# }
 
 
